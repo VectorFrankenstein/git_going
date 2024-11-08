@@ -87,7 +87,9 @@ void qualify_electoral_pair(struct candidate_pair* current_electoral_pair, int n
 
 void bubble_sort_election_tally(struct candidate_pair* current_electoral_pair, int n_current_electoral_pair);
 
-void populate_candidate_graph(struct candidate_pair* current_electoral_pair, int n_current_electoral_pair,struct candidate_graph_node* current_candidate_graph, int n_candidates);
+void tideman_func(struct candidate_pair* current_electoral_pair, int n_current_electoral_pair,struct candidate_graph_node* current_candidate_graph, int n_candidates);
+
+bool contains(char** ballot, int n_ballot, char* candidate);
 // ---
 
 int main(int argc, char* argv[]){
@@ -139,8 +141,23 @@ int main(int argc, char* argv[]){
         printf("Please rank the candidates for voter number %i :- \n",i);
 
         for(int j = 0; j < candidate_count; j++){
-            printf("Rank number %i:- ",j+1);
-            scanf("%s",voters_rankings[j]);
+            
+            bool right_candidate = false;
+            do
+            {
+                right_candidate = false;
+
+                printf("Rank number %i:- ",j+1);
+                scanf("%s",voters_rankings[j]);
+
+                right_candidate = contains(all_candidates,candidate_count,voters_rankings[j]);
+
+                if(right_candidate == false){
+                    printf("Please enter a valid candidate.\n");
+                }
+            }while (right_candidate == false);
+            
+            
         } // here you have the current voter's ranks.
 
         struct ranked_pair* current_ranked_pair = rank_pairs(rank_pair_holder,n_combinations,voters_rankings,candidate_count);
@@ -172,19 +189,19 @@ int main(int argc, char* argv[]){
     // we need to work on the graph
     struct candidate_graph_node* candidate_graph = (struct candidate_graph_node*)malloc(n_voters * sizeof(struct candidate_graph_node));
 
-    for(int i = 0; i < n_voters;i++){ //
+    for(int i = 0; i < candidate_count;i++){ //
         candidate_graph[i].name = all_candidates[i];
         candidate_graph[i].in_degree = 0;
     }
 
-    populate_candidate_graph(combinations_of_candidates,n_combinations,candidate_graph,candidate_count);
+    tideman_func(combinations_of_candidates,n_combinations,candidate_graph,candidate_count);
 
 
     //for(int i = 0; i < n_combinations; i++){ // < because n_combinations is a count and i is an index.
     //    printf("The first candidate is %s with %i vote/s and the second candidate is %s with %i vote/s and the winner is %s\n", combinations_of_candidates[i].one.name, combinations_of_candidates[i].one.votes, combinations_of_candidates[i].two.name, combinations_of_candidates[i].two.votes, combinations_of_candidates[i].winner);
     //}
 
-    for(int i = 0; i < n_voters;i++){
+    for(int i = 0; i < candidate_count;i++){
         printf("The candidate is %s and the in-degree is %i\n", candidate_graph[i].name,candidate_graph[i].in_degree);
     }
 
@@ -448,18 +465,52 @@ void bubble_sort_election_tally(struct candidate_pair* current_electoral_pair, i
 }
 
 /*
-Name:- populate_candidate_graph
+Name:- tideman_func
 
-Goal:- Populate the graph
+Goal:- Populate the graph and apply the tideman algorithm.
 */
 
-void populate_candidate_graph(struct candidate_pair* current_electoral_pair, int n_current_electoral_pair,struct candidate_graph_node* current_candidate_graph, int n_candidates){
+void tideman_func(struct candidate_pair* current_electoral_pair, int n_current_electoral_pair,struct candidate_graph_node* current_candidate_graph, int n_candidates){
     // TODO:- Count in_degrees for each candidate.
-    for(int i = 0; i < n_candidates;i++){
-        for(int j = 0; j < n_current_electoral_pair; j++){
-            if(strcmp(current_candidate_graph[i].name,current_electoral_pair[j].loser) == 0){
+    for(int j = 0; j < n_current_electoral_pair; j++){
+        for(int i = 0; i < n_candidates;i++){
+            if(strcmp(current_candidate_graph[i].name,current_electoral_pair[j].loser) == 0 && !current_electoral_pair[j].draw){
+
                 current_candidate_graph[i].in_degree++;
+
+                // Did the previous action make a circle?
+                int tideman_count = 0;
+                for(int k = 0; k < n_candidates;k++){
+                    if(current_candidate_graph[k].in_degree > 0){
+                        tideman_count++;
+                    }
+                }
+                printf("The tideman count is :- %i\n",tideman_count);
+                // If it made a circle drop a count.
+                if(tideman_count == n_candidates){
+                    current_candidate_graph[i].in_degree--;
+                }
             }
         }
     }
+}
+
+/*
+Name:- contains
+
+Goal:- Does this array have this item?
+
+Takes:-
+1. all_candidates, an array of all candidates. Type:- char**
+2. n_all_candidates, the size of the all_candidates array. Type:- int
+3. candidate, the candidate to search for in the array. Type:- char*
+Returns:- (bool)
+*/
+bool contains(char** ballot, int n_ballot, char* candidate) {
+    for (int i = 0; i < n_ballot; i++) {
+        if (strcmp(ballot[i], candidate) == 0) {
+            return true;
+        }
+    }
+    return false;
 }
