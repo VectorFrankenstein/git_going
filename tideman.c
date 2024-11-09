@@ -134,7 +134,7 @@ int main(int argc, char* argv[]){
 
         char** voters_rankings = malloc(candidate_count * sizeof(char*));
 
-        for(int i = 0;i < candidate_count;i++){
+        for(int i = 0; i < candidate_count; i++){
             voters_rankings[i] = malloc(64 * sizeof(char));
         }
 
@@ -202,9 +202,10 @@ int main(int argc, char* argv[]){
     //}
 
     for(int i = 0; i < candidate_count;i++){
-        printf("The candidate is %s and the in-degree is %i\n", candidate_graph[i].name,candidate_graph[i].in_degree);
+        if(candidate_graph[i].in_degree == 0){
+            printf("The winner is %s\n",candidate_graph[i].name);
+        }
     }
-
 
     // Free the dynamically allocated memory.
     free(all_candidates);
